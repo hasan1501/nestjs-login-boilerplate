@@ -6,11 +6,13 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 
 import { parse } from 'pg-connection-string';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   controllers: [AppController],
   providers: [AppService],
   imports: [
+    AuthModule,
     UsersModule,
     ConfigModule.forRoot({
       isGlobal: true,

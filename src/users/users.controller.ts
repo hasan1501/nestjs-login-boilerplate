@@ -1,54 +1,34 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
-  Patch,
   Param,
-  Delete,
-  HttpException,
-  HttpStatus,
+  Put,
+  UseGuards,
+  Request,
+  UseInterceptors,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { EMAIL_EXIST } from 'src/constants/errors.constants';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { UserEntity } from './entities/user.entity';
 
 @Controller('users')
+@UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    const existingUser = await this.usersService.findOneByEmail(
-      createUserDto.email,
-    );
-
-    if (existingUser) {
-      throw new HttpException(EMAIL_EXIST, HttpStatus.FORBIDDEN);
-    }
-
-    const createdUser = await this.usersService.create(createUserDto);
-    return createdUser;
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async findOne(@Request() req) {
+    const userData = await this.usersService.findOneById(req.user.id);
+    return new UserEntity(userData['dataValues']);
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOneById(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
-  }
+  //   @UseGuards(JwtAuthGuard)
+  //   @Put('me')
+  //   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  //     return this.usersService.update(+id, updateUserDto);
+  //   }
 }
