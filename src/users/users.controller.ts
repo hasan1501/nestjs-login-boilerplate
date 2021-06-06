@@ -1,15 +1,35 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { EMAIL_EXIST } from 'src/constants/errors.constants';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto) {
+    const existingUser = await this.usersService.findOneByEmail(
+      createUserDto.email,
+    );
+
+    if (existingUser) {
+      throw new HttpException(EMAIL_EXIST, HttpStatus.FORBIDDEN);
+    }
+
+    const createdUser = await this.usersService.create(createUserDto);
+    return createdUser;
   }
 
   @Get()
@@ -19,7 +39,7 @@ export class UsersController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+    return this.usersService.findOneById(id);
   }
 
   @Patch(':id')
